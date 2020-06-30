@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30104.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SonarQubeDotNetCoreCodeCoverageExample", "SonarQubeDotNetCoreCodeCoverageExample\SonarQubeDotNetCoreCodeCoverageExample.csproj", "{F30BE970-AAD7-4B60-8221-A29D1D71273A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SonarQubeDotNetCoreCodeCoverageExample.Test", "SonarQubeDotNetCoreCodeCoverageExample.Test\SonarQubeDotNetCoreCodeCoverageExample.Test.csproj", "{7901ED38-0FB2-4962-B00D-89BE8F355D49}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SonarQubeDotNetCoreCodeCoverageExample.Test", "SonarQubeDotNetCoreCodeCoverageExample.Test\SonarQubeDotNetCoreCodeCoverageExample.Test.csproj", "{AADE4D43-923A-40C3-A5BE-9694AD9BE6B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{F30BE970-AAD7-4B60-8221-A29D1D71273A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F30BE970-AAD7-4B60-8221-A29D1D71273A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F30BE970-AAD7-4B60-8221-A29D1D71273A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7901ED38-0FB2-4962-B00D-89BE8F355D49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7901ED38-0FB2-4962-B00D-89BE8F355D49}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7901ED38-0FB2-4962-B00D-89BE8F355D49}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7901ED38-0FB2-4962-B00D-89BE8F355D49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AADE4D43-923A-40C3-A5BE-9694AD9BE6B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AADE4D43-923A-40C3-A5BE-9694AD9BE6B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AADE4D43-923A-40C3-A5BE-9694AD9BE6B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AADE4D43-923A-40C3-A5BE-9694AD9BE6B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
