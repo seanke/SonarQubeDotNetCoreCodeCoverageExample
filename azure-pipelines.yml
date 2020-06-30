@@ -21,6 +21,12 @@ steps:
     organization: 'seanke'
     scannerMode: 'MSBuild'
     projectKey: 'seanke_SonarQubeDotNetCoreCodeCoverageExample'
+    extraProperties: |
+      # Additional properties that will be passed to the scanner, 
+      # Put one key=value per line, example:
+      # sonar.exclusions=**/*.bin
+      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)\**\*.trx
+      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)\**\*.coveragexml
 - task: NuGetToolInstaller@1
 - task: NuGetCommand@2
   inputs:
