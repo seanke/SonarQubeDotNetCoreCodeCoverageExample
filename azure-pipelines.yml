@@ -1,44 +1,188 @@
-# ASP.NET Core (.NET Framework)
-# Build and test ASP.NET Core projects targeting the full .NET Framework.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+trigger: none
 
-trigger:
-- master
+stages:
+- stage: Build
+  condition: eq(variables['Build.Reason'], 'Manual')
+  displayName: Build
+  jobs:
+  - job: BuildDB
+    displayName: Build Database
+    pool:
+      name: Azure Pipelines
+      vmImage: 'windows-latest'      
+    steps:
+    - task: VSBuild@1
+      displayName: 'Build database solution'
+      inputs:
+        solution: MaerskLine.CHAMPS.Database/MaerskLine.CHAMPS.Database/MaerskLine.CHAMPS.Database.sqlproj
+        configuration: 'Release'
+    
+    - task: CopyFiles@2
+      displayName: 'Copy Dacpac'
+      inputs:
+        SourceFolder: '$(agent.BuildDirectory)/s/MaerskLine.CHAMPS.Database/MaerskLine.CHAMPS.Database/bin/Release'
+        Contents: 'MaerskLine.CHAMPS.Database.dacpac'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/publish_output/database'
+        CleanTargetFolder: true
+        OverWrite: true
+      
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/publish_output/database'
+        ArtifactName: database
 
-pool:
-  vmImage: 'windows-latest'
+  - job: BuildWebApiAndJob
+    displayName: Build WebApi And WebJob
+    pool:
+      name: Azure Pipelines
+      vmImage: 'windows-latest'
 
-variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
+    variables:
+      buildConfiguration: 'Release'
 
-steps:
-- task: SonarCloudPrepare@1
-  inputs:
-    SonarCloud: 'SonarCloud'
-    organization: 'seanke'
-    scannerMode: 'MSBuild'
-    projectKey: 'seanke_SonarQubeDotNetCoreCodeCoverageExample'
-    extraProperties: |
-      # Additional properties that will be passed to the scanner, 
-      # Put one key=value per line, example:
-      # sonar.exclusions=**/*.bin
-      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)\**\*.trx
-      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)\**\*.coveragexml
-- task: NuGetToolInstaller@1
-- task: NuGetCommand@2
-  inputs:
-    restoreSolution: '$(solution)'
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'build'
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'test'
-    arguments: '--collect "Code Coverage"'
-- task: SonarCloudAnalyze@1
-- task: SonarCloudPublish@1
-  inputs:
-    pollingTimeoutSec: '300'
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Set up .NET 6 sdk 6.0.x'
+      inputs:
+        version: 6.0.x
+        
+       
+    - task: SonarQubePrepare@5
+      displayName: Prepare analysis on SonarQube-API
+      inputs:
+        SonarQube: baa10ec9-199d-41a2-a72e-5704dfdfe7cc
+         projectKey:champs-API
+         projectName:champs-API
+      
+    - task: DotNetCoreCLI@2  
+      displayName: 'Restore Web Api'
+      inputs:
+        command: restore
+        projects: MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api.csproj
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Web Api'
+      inputs:
+        projects: MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api.csproj
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+       
+    - task: SonarQubeAnalyze@5
+        displayName:Run Code Analysis-API
+        
+    - task: SonarQubePublish@5
+        displayName:Publish Quality Gate Result-API
+        
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Web Api'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api/MaerskLine.CHAMPS.Web.Api.csproj
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish_output'
+        zipAfterPublish: false
+        modifyOutputPath: false
+     
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore Web Job'
+      inputs:
+        command: restore
+        projects: 'MaerskLine.CHAMPS.WebJobs/MaerskLine.CHAMPS.WebJobs/*/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Web Job'
+      inputs:
+        projects: 'MaerskLine.CHAMPS.WebJobs/MaerskLine.CHAMPS.WebJobs/*/*.csproj'
+        arguments: '--configuration release'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Web Job'
+      inputs:
+        command: publish
+        publishWebProjects: false
+        projects: 'MaerskLine.CHAMPS.WebJobs/MaerskLine.CHAMPS.WebJobs/*/*.csproj'
+        arguments: '--output $(Build.ArtifactStagingDirectory)/publish_output/app_data/jobs/triggered'
+        zipAfterPublish: false
+
+    - task: ArchiveFiles@2
+      displayName: 'Archive Web Api And Web Job'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/publish_output'
+        includeRootFolder: false
+        archiveFile: '$(Build.ArtifactStagingDirectory)/WebApiAndWebJob.zip'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: drop'
+
+  - job: BuildUI
+    displayName: Build Web UI
+    pool:
+      name: Azure Pipelines
+      vmImage: 'windows-latest'
+    steps:
+    - task: NodeTool@0
+      displayName: 'Use Node 14.20.0'
+      inputs:
+        versionSpec: 14.20.0
+    
+    - task: Npm@1
+      displayName: 'npm install angular'
+      inputs:
+        command: custom
+        verbose: false
+        customCommand: 'install @angular/cli -g'
+
+    - task: Npm@1
+      displayName: 'npm install'
+      inputs:
+        workingDir: 'champs-ui'
+        verbose: false
+
+    - task: SonarQubePrepare@5
+      inputs:
+        SonarQube: 'sonar_maerskdev_net-CHAMPS'
+        scannerMode: 'CLI'
+        configMode: 'manual'
+        cliProjectKey: 'champs'
+        cliProjectName: 'champs-ui'
+        cliSources: './champs-ui/src'
+        extraProperties: |
+          sonar.exclusions=**/node_modules/**
+          sonar.test.inclusions=**/*.spec.ts
+          sonar.javascript.lcov.reportPaths=champs-ui/coverage/lcov.info
+    - task: Npm@1
+      displayName: 'npm run build dev1'
+      inputs:
+        command: custom
+        workingDir: 'champs-ui'
+        verbose: false
+        customCommand: 'run-script build:dev1'
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: dist'
+      inputs:
+        PathtoPublish: 'champs-ui/dist'
+        ArtifactName: 'dist'
+        
+    - task: SonarQubeAnalyze@5
+    
+    - task: SonarQubePublish@5
+      inputs:
+        pollingTimeoutSec: '300'
+    
+
+# - template: deploy-templates/code-deploy-pipeline.yml
+#   parameters:
+#     environmentName: Dev
+#     serviceConnection: CHAMPS_DEV
+#     dependsOn: Build
+#     variableGroup: Champs-Dev
+#     deploymentPool: CHAMPS
+
+- template: deploy-templates/code-deploy-pipeline.yml
+  parameters:
+    environmentName: ST
+    serviceConnection: CHAMPS_TST
+    dependsOn: Build
+    variableGroup: CHAMPS-ST
+    deploymentPool: CHAMPS
